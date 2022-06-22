@@ -20,15 +20,15 @@
     <div class="row" style="height: 40vh">
       <div class="col-6">
         <p>WILDERNESS</p>
-        <q-btn>forage</q-btn>
+        <q-btn @click="forage">forage</q-btn>
         <div>
           ready to collect:
-          <div class="row"></div>
+          <div class="row">...</div>
         </div>
         <br />
         <div>
           on expedition:
-          <div class="row"></div>
+          <div class="row">...</div>
         </div>
       </div>
       <div class="col-6">
@@ -63,6 +63,7 @@ import { defineComponent, ref } from 'vue';
 
 import wallet from '../../services/wallet.service';
 import avatar from '../../services/avatar.service';
+import wilderness from '../../services/wilderness.service';
 import neonToken from '../../services/neon-token.service';
 import { networkInfo } from 'src/services/network.info';
 
@@ -95,6 +96,10 @@ export default defineComponent({
 
     if (this.connectedAccount) {
       void neonToken.myBalance(this.connectedAccount);
+      void neonToken.myResourceBalance(this.connectedAccount, 'stone');
+      void neonToken.myResourceBalance(this.connectedAccount, 'stick');
+      void neonToken.myResourceBalance(this.connectedAccount, 'plant');
+      void neonToken.myResourceBalance(this.connectedAccount, 'apple');
     }
 
     this.myAvatars = await avatar.getMyAvatars();
@@ -118,6 +123,10 @@ export default defineComponent({
       const newAvatar = await avatar.generateAvatar(this.newAvatarName);
       await newAvatar.wait();
       this.myAvatars = await avatar.getMyAvatars();
+    },
+
+    forage: async function () {
+      await wilderness.forage();
     },
   },
 });
