@@ -20,7 +20,7 @@ export const networkInfo: NetworkInfo = {
   },
 };
 
-// the new/real harmony testnet from discord...
+// the new/real harmony Devnet from discord... (this is the one to use!)
 // websocket: ws.s0.ps.hmny.io
 // api/rpc:  https://api.s0.ps.hmny.io/
 // faucet/explorer info : https://docs.harmony.one/home/developers/network-and-faucets
