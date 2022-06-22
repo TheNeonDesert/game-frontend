@@ -7,23 +7,23 @@ class AvatarService extends BaseService {
     super(networkInfo.contracts.avatar, avatarContract.abi);
   }
 
-  async generateCharacter(name: string): Promise<any> {
+  async generateAvatar(name: string): Promise<any> {
     const avatar = this.connectedContract.generateCharacter(name);
     return avatar;
   }
 
-  async getMyCharacters(): Promise<any[]> {
+  async getMyAvatars(): Promise<any[]> {
     const signerAddress = await this.signer.getAddress();
-    const characterCount = (
+    const avatarCount = (
       await this.connectedContract.balanceOf(signerAddress)
     ).toNumber();
-    const myCharacters = [];
-    for (let i = 0; i < characterCount; i++) {
-      myCharacters.push(
+    const myAvatars = [];
+    for (let i = 0; i < avatarCount; i++) {
+      myAvatars.push(
         await this.connectedContract.tokenOfOwnerByIndex(signerAddress, i)
       );
     }
-    return myCharacters;
+    return myAvatars;
   }
 }
 

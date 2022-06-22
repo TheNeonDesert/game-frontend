@@ -20,6 +20,12 @@ export const networkInfo: NetworkInfo = {
   },
 };
 
+// the new/real harmony testnet from discord...
+// websocket: ws.s0.ps.hmny.io
+// api/rpc:  https://api.s0.ps.hmny.io/
+// faucet/explorer info : https://docs.harmony.one/home/developers/network-and-faucets
+// chainid : 1666900000
+
 // chainId = 31337; // hardhat
 // chainId: '0x7A69',
 // rpcUrls: [networkRPC],
