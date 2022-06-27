@@ -1,31 +1,36 @@
 <template>
   <div>
-    <p>ALTAR</p>
-    <q-btn @click="pray">pray - get 1 free NEON</q-btn>
+    <h4>ALTAR</h4>
+    <p>
+      Pray to the Mother. Should your words prove worthy you may receive some
+      NEON
+    </p>
+    <q-btn @click="pray" :loading="praying">pray</q-btn>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { IBackpack, useBackpackStore } from 'src/stores/backpack.store';
-import { Notify } from 'quasar';
+import { defineComponent } from 'vue';
 import altar from '../../services/altar.service';
+import Utils from '../../services/utils';
 
 export default defineComponent({
   name: 'BackpackPage',
-  setup() {
+  data: function () {
     return {
-      backpack: ref<IBackpack>(),
+      praying: false,
     };
-  },
-  created: async function () {
-    this.backpack = useBackpackStore();
   },
   methods: {
     pray: async function () {
-      await altar.pray();
-      // wait for event and update balance
-      Notify.create('Praying Complete');
+      this.praying = true;
+      try {
+        await altar.pray();
+        this.praying = false;
+      } catch (err) {
+        this.praying = false;
+        Utils.error('Error Praying', err);
+      }
     },
   },
 });

@@ -1,1 +1,12 @@
 // app global css in SCSS form
+
+// Notifications
+
+.neon-q-notify .q-notification__icon {
+  color: $positive;
+}
+
+.negative,
+.neon-q-notify-error .q-notification__icon {
+  color: $negative;
+}

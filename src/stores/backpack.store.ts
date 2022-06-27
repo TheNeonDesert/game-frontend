@@ -2,7 +2,7 @@ import { BigNumber, ethers } from 'ethers';
 import { defineStore } from 'pinia';
 
 export const useBackpackStore = defineStore('backpack', {
-  state: (): IBackpack => ({
+  state: (): BackpackStore => ({
     neon: BigNumber.from(0),
 
     stone: BigNumber.from(0),
@@ -23,7 +23,7 @@ export const useBackpackStore = defineStore('backpack', {
   },
 });
 
-export interface IBackpack {
+export interface BackpackStore {
   neon: BigNumber;
 
   stone: BigNumber;

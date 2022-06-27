@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
+import { BigNumber } from 'ethers';
 
 export const useAvatarStore = defineStore('avatar', {
-  state: () => ({
+  state: (): AvatarStore => ({
     avatars: [],
   }),
   getters: {
@@ -13,3 +14,12 @@ export const useAvatarStore = defineStore('avatar', {
     // },
   },
 });
+
+export interface AvatarStore {
+  avatars: Avatar[];
+}
+
+export interface Avatar {
+  tokenId: BigNumber;
+  name: string;
+}

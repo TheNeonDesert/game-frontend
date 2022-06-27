@@ -3,56 +3,81 @@ import resourceTokenContract from '../../contract-artifacts/MockResourceToken.so
 import { BigNumber } from 'ethers';
 import BaseService from './base.service';
 import { networkInfo } from './network.info';
-import { IBackpack, useBackpackStore } from '../stores/backpack.store';
+import { BackpackStore, useBackpackStore } from '../stores/backpack.store';
 
 class TokenService extends BaseService {
-  private backpack: IBackpack;
+  private backpackStore: BackpackStore;
 
-  private stoneToken: ResourceTokenService;
-  private stickToken: ResourceTokenService;
-  private plantToken: ResourceTokenService;
-  private appleToken: ResourceTokenService;
+  private resourceTokens: { [name: string]: ResourceTokenService } = {};
 
   constructor() {
     super(networkInfo.contracts.neonToken, neonTokenContract.abi);
-    this.backpack = useBackpackStore();
+    this.backpackStore = useBackpackStore();
 
-    // TODO clean up a bit
-    this.stoneToken = new ResourceTokenService(
-      networkInfo.contracts.stoneToken,
-      resourceTokenContract.abi
-    );
-    this.stickToken = new ResourceTokenService(
-      networkInfo.contracts.stickToken,
-      resourceTokenContract.abi
-    );
-    this.plantToken = new ResourceTokenService(
-      networkInfo.contracts.plantToken,
-      resourceTokenContract.abi
-    );
-    this.appleToken = new ResourceTokenService(
-      networkInfo.contracts.appleToken,
-      resourceTokenContract.abi
-    );
-  }
+    const resources = [
+      {
+        addr: networkInfo.contracts.stoneToken,
+        abi: resourceTokenContract.abi,
+        name: 'stone',
+      },
+      {
+        addr: networkInfo.contracts.stickToken,
+        abi: resourceTokenContract.abi,
+        name: 'stick',
+      },
+      {
+        addr: networkInfo.contracts.plantToken,
+        abi: resourceTokenContract.abi,
+        name: 'plant',
+      },
+      {
+        addr: networkInfo.contracts.appleToken,
+        abi: resourceTokenContract.abi,
+        name: 'apple',
+      },
+    ];
 
-  async myBalance(address: string): Promise<BigNumber> {
-    return (this.backpack.neon = await this.contract.balanceOf(address));
-  }
-
-  async myResourceBalance(address: string, token: string): Promise<BigNumber> {
-    switch (token) {
-      case 'stone':
-        return (this.backpack.stone = await this.stoneToken.myBalance(address));
-      case 'stick':
-        return (this.backpack.stick = await this.stickToken.myBalance(address));
-      case 'plant':
-        return (this.backpack.plant = await this.plantToken.myBalance(address));
-      case 'apple':
-        return (this.backpack.apple = await this.appleToken.myBalance(address));
-      default:
-        throw Error(`Unknown requested token${token}`);
+    for (let i = 0; i < resources.length; i++) {
+      this.resourceTokens[resources[i].name] = new ResourceTokenService(
+        resources[i].addr,
+        resources[i].abi,
+        resources[i].name
+      );
     }
+  }
+
+  protected async init(): Promise<void> {
+    this.contract.on(
+      'Transfer',
+      (from: string, to: string, value: BigNumber) => {
+        if (this.connectedAddress === from || this.connectedAddress === to) {
+          void this.myBalance();
+        }
+      }
+    );
+    void this.myBalance();
+  }
+
+  public onApproval(
+    spenderAddress: string,
+    callback: (value: BigNumber) => void
+  ): void {
+    this.contract.on(
+      'Approval',
+      (owner: string, spender: string, value: BigNumber) => {
+        if (this.connectedAddress === owner && spenderAddress === spender) {
+          callback(value);
+        }
+      }
+    );
+  }
+
+  async myBalance(): Promise<BigNumber> {
+    if (!this.connectedAddress)
+      throw Error('Unable to get balance. No connected wallet');
+    return (this.backpackStore.neon = await this.contract.balanceOf(
+      this.connectedAddress
+    ));
   }
 
   async approve(spender: string, amount: BigNumber): Promise<void> {
@@ -72,14 +97,65 @@ class TokenService extends BaseService {
 }
 
 class ResourceTokenService extends BaseService {
+  private backpackStore: BackpackStore;
+  public name: string;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(address: string, abi: any) {
+  constructor(address: string, abi: any, name: string) {
     super(address, abi);
+
+    this.backpackStore = useBackpackStore();
+    this.name = name; // TODO cleanup and test against
   }
 
-  async myBalance(address: string): Promise<BigNumber> {
-    return this.contract.balanceOf(address);
+  protected async init(): Promise<void> {
+    this.contract.on(
+      'Transfer',
+      async (from: string, to: string, value: BigNumber) => {
+        if (this.connectedAddress === from || this.connectedAddress === to) {
+          void this.myBalance();
+        }
+      }
+    );
+    void this.myBalance();
+  }
+
+  async myBalance(): Promise<BigNumber> {
+    if (!this.connectedAddress)
+      throw Error('Unable to get balance. No connected wallet');
+    const balance = await this.contract.balanceOf(this.connectedAddress);
+
+    // TODO better way?
+    switch (this.name) {
+      case 'stone':
+        this.backpackStore.stone = balance;
+        break;
+      case 'stick':
+        this.backpackStore.stick = balance;
+        break;
+      case 'plant':
+        this.backpackStore.plant = balance;
+        break;
+      case 'apple':
+        this.backpackStore.apple = balance;
+        break;
+    }
+    return balance;
   }
 }
 
 export default new TokenService();
+
+/**
+ * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+ * a call to {approve}. `value` is the new allowance.
+ */
+//  event Approval(address indexed owner, address indexed spender, uint256 value);
+
+/**
+ * @dev Emitted when `value` tokens are moved from one account (`from`) to
+ * another (`to`).
+ *
+ * Note that `value` may be zero.
+ */
+// event Transfer(address indexed from, address indexed to, uint256 value);
