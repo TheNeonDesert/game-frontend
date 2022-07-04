@@ -1,27 +1,27 @@
 <template>
   <div>
     <div class="row">
-      <div class="col-12 col-md-6">
+      <div class="q-card q-pa-md q-ma-sm col-11 col-md-5">
         <avatar-page />
       </div>
-      <div class="col-12 col-md-6">
+      <div class="q-card q-pa-md q-ma-sm col-11 col-md-5">
         <backpack-page />
       </div>
     </div>
     <div class="row">
-      <div class="col-12 col-md-6">
+      <div class="q-card q-pa-md q-ma-sm col-11 col-md-5">
         <wilderness-page />
       </div>
-      <div class="col-12 col-md-6">
+      <div class="q-card q-pa-md q-ma-sm col-11 col-md-5">
         <altar-page />
       </div>
     </div>
     <div class="row">
-      <div class="col-12 col-md-6">
+      <div class="q-card q-pa-md q-ma-sm col-11 col-md-5">
         <div>
           <h4>WISHING WELL</h4>
           <p>Throw your hard earned resources into the well...</p>
-          <q-btn>wish</q-btn>
+          <q-btn disabled>wish</q-btn>
         </div>
       </div>
     </div>

@@ -3,93 +3,103 @@ import { networkInfo } from './network.info';
 import BaseService from './base.service';
 import { BigNumber } from 'ethers';
 import avatar from './avatar.service';
+import {
+  WildernessStore,
+  useWildernessStore,
+  ForagingAvatar,
+} from '../stores/wilderness.store';
+import avatarService from './avatar.service';
 
 class WildernessService extends BaseService {
+  private wildernessStore: WildernessStore;
+
   constructor() {
     super(networkInfo.contracts.wilderness, wildernessContract.abi);
+    this.wildernessStore = useWildernessStore();
+    setInterval(() => {
+      this.keepAvatarDurationsUpdated();
+    }, 1000);
   }
 
-  async forage(): Promise<void> {
-    await this.connectedContract.startForage(BigNumber.from(0x02)); // TODO un-hardcode
+  async forage(tokenId: BigNumber): Promise<void> {
+    await this.connectedContract.startForage(BigNumber.from(tokenId));
   }
 
-  async completeForage(): Promise<void> {
-    await this.connectedContract.completeForage(BigNumber.from(0x02)); // TODO un-hardcode
+  async completeForage(tokenId: BigNumber): Promise<void> {
+    await this.connectedContract.completeForage(BigNumber.from(tokenId));
   }
 
-  async approveAvatarToForage(): Promise<void> {
+  async approveAvatarToForage(tokenId: BigNumber): Promise<void> {
     return avatar.approve(
       networkInfo.contracts.wilderness,
-      BigNumber.from(0x02) // TODO un-hardcode
+      BigNumber.from(tokenId)
     );
   }
 
-  // mapping(address => mapping(uint256 => bool)) public avatarOwners;
-  // mapping(uint256 => ForagingRecord) public activeForagers;
+  async isAvatarApproved(tokenId: BigNumber): Promise<boolean> {
+    const approvedAddress = await avatar.getApproved(tokenId);
+    return networkInfo.contracts.wilderness === approvedAddress;
+  }
 
-  async myAvatarsAtWilderness(): Promise<void> {
+  async myAvatarsAtWilderness(): Promise<ForagingAvatar[]> {
     const signerAddress = await this.signer.getAddress();
-    const avatarOwners = await this.connectedContract.getOwnedAvatars(
+    const avatarOwners = (await this.connectedContract.getOwnedAvatars(
       signerAddress
-    );
-    console.log('avatarOwners:', avatarOwners);
+    )) as BigNumber[];
+    const myAvatars = [];
+    for (let i = 0; i < avatarOwners.length; i++) {
+      const avatar = await avatarService.getAvatarDetails(avatarOwners[i]);
+
+      const foragerDetail = await this.connectedContract.activeForagers(
+        // TODO rename activeForagers on contract
+        avatarOwners[i]
+      );
+      myAvatars.push({ ...avatar, ...foragerDetail });
+    }
+    return (this.wildernessStore.avatarsForaging = myAvatars);
   }
 
-  async foragerDetail(): Promise<void> {
-    const details = await this.connectedContract.activeForagers(
-      BigNumber.from(0x02) // TODO un-hardcode
-    );
-    this.findEnd(details);
-    console.log('details:', details);
-  }
-
-  findEnd(details: {
-    startTime: BigNumber;
-    duration: BigNumber;
-    collected: boolean;
-  }) {
-    const endTimeDate = new Date(
-      (parseInt(details.startTime._hex, 16) +
-        parseInt(details.duration._hex, 16)) *
-        1000
-    );
-    console.log('endTimeDate:', endTimeDate);
+  keepAvatarDurationsUpdated() {
+    // code to take startTime and duration...
+    // TODO maybe move this somewhere?
+    // TODO move to its own function, start immediately, and manage the timeout
+    // TODO change interval from every x seconds as it gets closer to 60?
+    // TODO destroy on leave
+    // TODO watch for event NEW_ACTION or something, so when they start choppin, re-check this manually
+    // setInterval(() => {
+    //   // TODO bugfix, if you send on action and they're currently complete, the timer never kicks back in
+    //   // but if you reload, it's good to go
+    if (this.wildernessStore) {
+      for (let i = 0; i < this.wildernessStore.avatarsForaging.length; i++) {
+        const avatar = this.wildernessStore.avatarsForaging[i];
+        const endTimeDate = new Date(
+          (parseInt(avatar.startTime._hex, 16) +
+            parseInt(avatar.duration._hex, 16)) *
+            1000
+        );
+        const timeLeftMs = endTimeDate.getTime() - new Date().getTime();
+        let seconds = Math.trunc(timeLeftMs / 1000);
+        let displayString = '';
+        if (seconds > 0) {
+          const days = Math.floor(seconds / (24 * 60 * 60));
+          seconds -= days * (24 * 60 * 60);
+          const hours = Math.floor(seconds / (60 * 60));
+          seconds -= hours * (60 * 60);
+          const minutes = Math.floor(seconds / 60);
+          seconds -= minutes * 60;
+          if (days > 0) displayString += `${days}d `;
+          if (hours > 0) displayString += `${hours}h `;
+          if (minutes > 0) displayString += `${minutes}m `;
+          displayString += `${seconds}s`;
+        } else {
+          displayString = 'complete';
+        }
+        this.wildernessStore.avatarsForaging[i].timeRemainingMs = timeLeftMs;
+        this.wildernessStore.avatarsForaging[i].timeRemainingDisplay =
+          displayString;
+      }
+    }
   }
 }
 
 export default new WildernessService();
-
-// code to take startTime and duration...
-
-// TODO move to its own function, start immediately, and manage the timeout
-// TODO change interval from every x seconds as it gets closer to 60?
-// TODO destroy on leave
-// TODO watch for event NEW_ACTION or something, so when they start choppin, re-check this manually
-// setInterval(() => {
-//   // TODO bugfix, if you send on action and they're currently complete, the timer never kicks back in
-//   // but if you reload, it's good to go
-//   let timeLeft = Math.trunc(
-//     (endTimeDate.getTime() - new Date().getTime()) / 1000
-//   );
-
-//   let seconds = timeLeft;
-//   let displayString = '';
-//   if (seconds > 0) {
-//     var days = Math.floor(seconds / (24 * 60 * 60));
-//     seconds -= days * (24 * 60 * 60);
-//     var hours = Math.floor(seconds / (60 * 60));
-//     seconds -= hours * (60 * 60);
-//     var minutes = Math.floor(seconds / 60);
-//     seconds -= minutes * 60;
-//     if (days > 0) displayString += `${days}d `;
-//     if (hours > 0) displayString += `${hours}h `;
-//     if (minutes > 0) displayString += `${minutes}m `;
-//     displayString += `${seconds}s`;
-//   } else {
-//     displayString = 'complete';
-//     // TODO check if there are rewards and display link to collect in the UI
-//     if (character.currentTask) {
-//       this.rewards[addr] = character.currentTask.rewards;
-//     }
-//   }
-//   this.timeLeftTracker[addr] = displayString;

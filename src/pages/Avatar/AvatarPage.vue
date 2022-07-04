@@ -1,13 +1,15 @@
 <template>
   <div>
     <h4>AVATARS</h4>
-    <q-btn @click="showNewAvatarModal = true">create</q-btn>
+    <q-btn @click="showNewAvatarModal = true" class="q-mb-md">create</q-btn>
     <div
       class="row"
       v-for="avatar of avatarStore?.avatars"
       v-bind:key="avatar.tokenId?.toString()"
     >
-      <div class="col-4">{{ avatar.name }}</div>
+      <div class="col-4">
+        {{ avatar.tokenId.toString() }}: {{ avatar.name }}
+      </div>
     </div>
   </div>
 
@@ -46,7 +48,7 @@ import { defineComponent, ref } from 'vue';
 import neonToken from '../../services/neon-token.service';
 import avatar from '../../services/avatar.service';
 import { networkInfo } from 'src/services/network.info';
-import { Avatar, AvatarStore, useAvatarStore } from 'src/stores/avatar.store';
+import { AvatarStore, useAvatarStore } from 'src/stores/avatar.store';
 
 export default defineComponent({
   name: 'AvatarPage',
@@ -55,7 +57,6 @@ export default defineComponent({
       neonTokenBalance: ref<string>(),
       connectedAccount: ref<string | null>(),
       newAvatarName: ref<string>(''),
-      myAvatars: ref<Array<Avatar>>(),
       showNewAvatarModal: ref(false),
       enoughNeonApproved: ref(false),
       avatarStore: ref<AvatarStore>(),

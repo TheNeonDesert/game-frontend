@@ -1,59 +1,115 @@
 <template>
   <div>
     <h4>WILDERNESS</h4>
-    <q-btn @click="approveAvatarToForage">approve avatar</q-btn>
-    <q-btn @click="forage">forage</q-btn>
-    <q-btn @click="completeForage">completeForage</q-btn>
-    <div>
-      ready to collect:
-      <div class="row">...</div>
-    </div>
-    <br />
-    <div>
-      on expedition:
-      <div class="row">...</div>
+    <q-btn @click="showForageModal = true">new foraging expedition</q-btn>
+    <div class="q-mt-md">
+      <div
+        class="row"
+        v-for="avatar of wildernessStore?.avatarsForaging"
+        v-bind:key="avatar.tokenId?.toString()"
+      >
+        <div v-if="avatar.timeRemainingDisplay == 'complete'">
+          {{ avatar.tokenId.toString() }}: {{ avatar.name }} -
+          <q-btn @click="completeForage(avatar.tokenId)">collect</q-btn>
+        </div>
+        <div v-else>
+          {{ avatar.tokenId.toString() }}: {{ avatar.name }} -
+          {{ avatar.timeRemainingDisplay }}
+        </div>
+      </div>
     </div>
   </div>
+
+  <q-dialog v-model="showForageModal">
+    <q-card>
+      <q-card-section>
+        <div class="text-h6">Forage</div>
+      </q-card-section>
+
+      <q-card-section class="q-pt-none">
+        <q-select
+          filled
+          v-model="selectedAvatar"
+          :options="avatarStore?.avatars"
+          label="Avatar to send"
+        />
+      </q-card-section>
+
+      <q-card-actions align="right" class="text-primary">
+        <q-btn flat label="Cancel" v-close-popup />
+        <q-btn
+          label="Approve Sending Avatar"
+          v-if="!avatarApproved"
+          @click="approveAvatarToForage"
+          :loading="approving"
+        />
+        <q-btn
+          label="Forage"
+          v-close-popup
+          v-if="avatarApproved"
+          @click="forage"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 import wilderness from '../../services/wilderness.service';
+import avatar from '../../services/avatar.service';
+import { Avatar, AvatarStore, useAvatarStore } from 'src/stores/avatar.store';
+import {
+  WildernessStore,
+  useWildernessStore,
+} from 'src/stores/wilderness.store';
+import { networkInfo } from 'src/services/network.info';
+import { BigNumber } from 'ethers';
 
 export default defineComponent({
   name: 'WildernessPage',
+  setup() {
+    return {
+      showForageModal: ref(false),
+      avatarApproved: ref(false),
+      avatarStore: ref<AvatarStore>(),
+      wildernessStore: ref<WildernessStore>(),
+      approving: ref(false),
+      selectedAvatar: ref<Avatar>(),
+    };
+  },
   created: async function () {
-    void wilderness.foragerDetail();
+    this.avatarStore = useAvatarStore();
+    this.wildernessStore = useWildernessStore();
     void wilderness.myAvatarsAtWilderness();
+
+    avatar.onApproval(networkInfo.contracts.wilderness, this.getApprovedStatus);
   },
   methods: {
     forage: async function () {
-      await wilderness.forage();
+      if (this.selectedAvatar) {
+        await wilderness.forage(this.selectedAvatar.tokenId);
+      }
     },
 
     approveAvatarToForage: async function () {
-      await wilderness.approveAvatarToForage();
+      if (this.selectedAvatar) {
+        await wilderness.approveAvatarToForage(this.selectedAvatar.tokenId);
+        this.approving = true;
+      }
     },
 
-    completeForage: async function () {
-      await wilderness.completeForage();
+    completeForage: async function (tokenId: BigNumber) {
+      await wilderness.completeForage(tokenId);
     },
 
-    // click forage
-    // get a modal asking which character you want to send
-    // select character
-    // click approve button
-    // spin and wait
-    // then select duration/setting and hit start expedition
-
-    // approveWildernessToTransferAvatar: function () {
-    // avatar.approve(
-    //   networkInfo.contracts.wilderness,
-    //     ethers.utils.parseUnits('1', 18)
-    //   );
-    // TODO approve wilderness contract to send avatar on user's behalf
-    // should be pretty similar to the approve neon call for the erc20, just 721s instead
-    // },
+    getApprovedStatus: async function () {
+      if (this.selectedAvatar) {
+        this.avatarApproved = await wilderness.isAvatarApproved(
+          this.selectedAvatar.tokenId
+        );
+      }
+    },
   },
 });
 </script>

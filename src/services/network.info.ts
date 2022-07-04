@@ -26,9 +26,9 @@ export const networkInfo: NetworkInfo = {
   providerUrl: 'https://api.s0.ps.hmny.io/',
   contracts: {
     altar: '0x613007ED21b04dE34946B799BcB1962C97F9d5dB',
-    avatar: '0x7640748c14F0553f8E9ED3BcAB6ff9620ff341d7',
+    avatar: '0x1e579083112f1eE6fDB2555EB8Bfa83FB7809688',
     neonToken: '0x8E6Dc2059cc6eb8A3f21Db4A6feb7fA13a6526DC',
-    wilderness: '0xC30672F3f3a4DDE0b32Fa7086fb887b088E858Cf',
+    wilderness: '0xcC39ed7de6Ed65bce431688Fb43e4BEF39A5C282',
 
     stoneToken: '0x6EA32644866eFcE9e6FCC377a39975d41Fd0372A',
     stickToken: '0x45Aae9058CaebdCD0b0C7Edd48F381495C91d537',

@@ -19,6 +19,7 @@ import { defineComponent } from 'vue';
 import { Notify } from 'quasar';
 
 import wallet from '../services/wallet.service';
+import { networkInfo } from 'src/services/network.info';
 
 export default defineComponent({
   name: 'MainLayout',
@@ -39,8 +40,7 @@ export default defineComponent({
         // this.wrongNetworkModal = true;
         Notify.create({
           type: 'negative',
-          // message: 'Wrong network, connect to Harmony Testnet',
-          message: 'Wrong network, connect to Rinkeby',
+          message: `Wrong network, connect to ${networkInfo.chainName}`,
         });
         return;
       }
@@ -79,8 +79,7 @@ export default defineComponent({
       // this.wrongNetworkModal = true;
       Notify.create({
         type: 'negative',
-        // message: 'Wrong network, connect to Harmony Testnet',
-        message: 'Wrong network, connect to Rinkeby',
+        message: `Wrong network, connect to ${networkInfo.chainName}`,
       });
       return;
     }
